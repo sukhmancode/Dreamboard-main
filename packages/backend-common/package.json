@@ -1,0 +1,18 @@
+{
+  "name": "@repo/backend-common",
+  "module": "index.ts",
+  "type": "module",
+  "exports": {
+    "./config":"./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "@repo/typescript-config": "*",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/node": "^22.16.5"
+  }
+}
