@@ -1,10 +1,24 @@
-"use client";
-export function AuthPage({isSignIn} : {isSignIn:boolean}) {
+import {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+  } from "@/components/ui/dialog";
+  import { Button } from "@/components/ui/button";
+import { AuthTabs } from "./Authtabs";
+  
+  export function SignInDialog() {
     return (
-        <div className="w-screen h-screen flex justify-center  items-center">
-            <input type="text" name="" id="" placeholder="Email"/>
-            <input type="password" name="" id="" placeholder="Password"/>
-            <button className="cursor-pointer bg-red-400">{isSignIn ? "Sign In" : "Sign Up"}</button>
-        </div>
-    )
-}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="sm">Sign In</Button>
+        </DialogTrigger>
+  
+        <DialogContent>
+            <AuthTabs/>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  

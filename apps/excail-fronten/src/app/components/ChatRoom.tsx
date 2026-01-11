@@ -1,7 +1,7 @@
 import axios from 'axios'
-import { BACKEND_URL } from '../../../../web/app/config'
 import { ChatRoomClient } from './ChatRoomClient';
 
+const BACKEND_URL = "http://localhost:3001"
 
 async function getChats(roomId:string) {
    const response = await axios.get(`${BACKEND_URL}/chats/${roomId}`)

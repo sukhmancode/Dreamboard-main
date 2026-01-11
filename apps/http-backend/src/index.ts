@@ -68,14 +68,13 @@ app.post("/signin",async(req,res) => {
     }
 
     const token = jwt.sign({
-        userId:user?.id
+        userId:user?.id,
+        name:user.name
     },JWT_SECRET)
     res.json({
         token
     })
 })
-
-
 
 
 app.post("/room",middleware,async(req,res) => {
@@ -132,6 +131,10 @@ app.get("/room/:slug",async(req,res) => {
     res.json({
         room
     })
+})
+app.get("/allRooms",async(req,res) => {
+    const allrooms = await prisma.room.findMany({});
+    res.json({allrooms})
 })
 app.listen(3001,() => {
     console.log("app is listening at 3001");

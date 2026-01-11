@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Pencil, Users, Zap, ArrowRight, Play, Download } from "lucide-react"
+import { SignInDialog } from "./components/AuthPage"
 
 export default function ExcalidrawLanding() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Grid Pattern Background */}
       <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
 
-      {/* Navigation */}
       <nav className="relative z-10 flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -30,9 +29,7 @@ export default function ExcalidrawLanding() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm">
-            Sign In
-          </Button>
+          <SignInDialog/>
           <Button size="sm" className="gradient-blue text-white border-0">
             Get Started
           </Button>
