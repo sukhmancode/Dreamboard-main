@@ -7,11 +7,9 @@ import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { DashboardTabs } from "../components/DashboardTabs";
 import axios from "axios";
-
-type JwtPayload = {
-  userId: string;
-  name: string;
-};
+import { JwtPayload } from "@/types/type";
+import { ProfileLogoutButton } from "../hooks/handleLogout";
+import { toast } from "sonner";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -35,14 +33,15 @@ const DashboardPage = () => {
     }
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.replace("/");
-  };
 
   const handleCreateRoom = async() => {
     if(!room.trim()) {
       setError("Room name can't be empty");
+      return; 
+    }
+    if(room.trim().length < 3) {
+      setError("Room name must be at least 3 characters");
+      return;
     }
     try {
       setLoading(true);
@@ -53,24 +52,22 @@ const DashboardPage = () => {
       {name:room}
       ,{
       headers:{
-      'Authorization': `${token}`
+      Authorization: `Bearer ${token}`
       },
       
       })
       console.log("Room created:", res.data);
-      //@ts-ignore
-      const data = await res.json();
-      //@ts-ignore
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to create room");
-      }
-      
+
+      toast.success(`Room created succesfully ${room}`)
       setRoom("");
-      
+      window.dispatchEvent(new Event("room-created"));
     } 
-    catch(err:any) {
-      console.log(err.message);
-      setError(err);
+    catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Failed to create room");
+      } else {
+        setError("Something went wrong");
+      }
     }
     finally {
       setLoading(false);
@@ -93,9 +90,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <Button onClick={handleLogout} variant="outline">
-          Log Out
-        </Button>
+        <ProfileLogoutButton/>
       </div>
         <div className="mb-8 max-w-md">
           <h2 className="text-xl font-semibold mb-2">Create Room</h2>

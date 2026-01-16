@@ -69,7 +69,8 @@ app.post("/signin",async(req,res) => {
 
     const token = jwt.sign({
         userId:user?.id,
-        name:user.name
+        name:user.name,
+        email:user.email
     },JWT_SECRET)
     res.json({
         token
@@ -132,10 +133,77 @@ app.get("/room/:slug",async(req,res) => {
         room
     })
 })
-app.get("/allRooms",async(req,res) => {
-    const allrooms = await prisma.room.findMany({});
+app.get("/allRooms",middleware,async(req,res) => {
+    //@ts-ignore
+    const userId = req.userId;
+
+    const allrooms = await prisma.room.findMany({
+        where:{adminId:userId}
+    });
     res.json({allrooms})
+})
+
+app.get("/recent",middleware,async(req,res) => {
+    //@ts-ignore
+    const userId = req.userId;
+
+    const rooms =  await prisma.room.findMany({
+        where:{adminId:userId},
+        orderBy : {createdAt:"desc"},
+        take:5
+    })
+
+    const chats = await prisma.chat.findMany({
+        where: { userId },
+        
+        take: 5,
+        include: {
+          room: true,
+        },
+    })
+
+    const recent = [
+        ...rooms.map(r => ({
+          label: `Created room “${r.slug}”`,
+          time: r.createdAt,
+        })),
+        ...chats.map(c => ({
+          label: `Sent a message in “${c.room.slug}”`,
+          //@ts-ignore
+          time: c.createdAt,
+        })),
+      ]
+        .sort((a, b) => b.time.getTime() - a.time.getTime())
+        .slice(0, 10);
+    
+      res.json({ recent });
+})
+
+app.get("/overview",middleware,async(req,res) => {
+    //@ts-ignore
+    const userId = req.userId;  
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const totalRooms = await prisma.room.count({
+        where: { adminId: userId },
+      });
+
+    const activeToday = await prisma.chat.count({
+        where:{
+            userId,
+            createdAt: {
+                gte:today
+            }
+        }
+    })
+    const messagesSent = await prisma.chat.count({
+        where: { userId },
+      });
+
+      res.json({
+        activeToday,messagesSent,totalRooms
+      })
 })
 app.listen(3001,() => {
     console.log("app is listening at 3001");
-});
+})

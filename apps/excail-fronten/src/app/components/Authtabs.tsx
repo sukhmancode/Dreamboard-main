@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import {useState} from "react"
+import {useEffect, useState} from "react"
 import {
   Card,
   CardContent,
@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { jwtDecode } from "jwt-decode";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,14 +21,17 @@ import {
 import { useRouter } from "next/navigation";
 import { log } from "console";
 import axios from "axios";
+import { JwtPayload } from "@/types/type";
 
 export function AuthTabs() {
   const router = useRouter();
+ 
+
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [tab,setTab] = useState<"register" | "login"> ("login");
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(""); 
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
 

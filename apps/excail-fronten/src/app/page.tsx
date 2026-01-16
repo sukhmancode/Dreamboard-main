@@ -1,9 +1,22 @@
+"use client";
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Pencil, Users, Zap, ArrowRight, Play, Download } from "lucide-react"
 import { SignInDialog } from "./components/AuthPage"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation";
 
 export default function ExcalidrawLanding() {
+  const router = useRouter();
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if(!token) {
+      return;
+    }
+    else {
+      router.push("/dashboard")
+    }
+  },[router])
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="fixed inset-0 grid-pattern opacity-30 pointer-events-none" />
