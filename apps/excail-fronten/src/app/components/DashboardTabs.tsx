@@ -16,12 +16,13 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
-import {useEffect,useState} from 'react';
+import { useEffect,useState } from 'react';
 import { Activity, JwtPayload, OverviewStats } from "@/types/type";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { HTTP_BACKEND } from "../../../config";
 import { ProfileLogoutButton } from "../hooks/handleLogout";
+import RoomJoinRequests from "./RoomJoinRequests";
 
 type Room = {
   id:number,
@@ -190,6 +191,7 @@ export function DashboardTabs() {
                     </p>
                   </div>
                   <Button size="sm" onClick={() => router.push(`/canvas/${room.id}`)}>Open</Button>
+                  <RoomJoinRequests roomId={room.id}/>
                 </div>
                 ))
               }

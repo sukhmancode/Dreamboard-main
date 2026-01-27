@@ -10,6 +10,7 @@ import axios from "axios";
 import { JwtPayload } from "@/types/type";
 import { ProfileLogoutButton } from "../hooks/handleLogout";
 import { toast } from "sonner";
+import { JoinRoomPopup } from "../components/JoinRoomPopup";
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -90,6 +91,7 @@ const DashboardPage = () => {
           </div>
         </div>
 
+        <JoinRoomPopup />
         <ProfileLogoutButton/>
       </div>
         <div className="mb-8 max-w-md">

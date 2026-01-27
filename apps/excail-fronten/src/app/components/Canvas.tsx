@@ -1,19 +1,22 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { initDraw } from "@/draw";
 import { IconButton } from "./IconButton";
 import { Pencil, Eraser, Undo, Redo, Trash2, Save, Circle, Square } from "lucide-react";
 import { Game } from "@/draw/Game";
+import RoomJoinRequests from "./RoomJoinRequests";
 
 export type Tool = "circle" | "rect" | "pencil" | "eraser";
 
 interface CanvasProps {
   roomId: string;
   socket: WebSocket;
+  role:"admin" | "editor" | "viewer";
+  onlineUsers:string[];
+  joinRequests:string[];
 }
 
-const Canvas: React.FC<CanvasProps> = ({ roomId, socket }) => {
+const Canvas: React.FC<CanvasProps> = ({ roomId, socket,role,onlineUsers,joinRequests }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>("pencil");
   const [game,setGame] = useState<Game>()
@@ -51,7 +54,29 @@ const Canvas: React.FC<CanvasProps> = ({ roomId, socket }) => {
   }, []);
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gray-100">
-      <TopBar selectedTool={selectedTool} setSelectedTool={setSelectedTool} />
+      {/* ONLINE USERS */}
+        <div className="absolute top-4 right-4 bg-white rounded-lg shadow p-3 text-sm z-50">
+          <p className="font-semibold mb-2 text-primary">
+            Online ({onlineUsers.length})
+          </p>
+
+          {onlineUsers.map((userId) => (
+            <div key={userId} className="text-muted-foreground">
+              • {userId.slice(0, 6)}
+            </div>
+          ))}
+        </div>
+
+        {/* JOIN REQUESTS (ADMIN ONLY) */}
+        <div className="fixed">
+        {role === "admin" && socket && (
+  <RoomJoinRequests roomId={Number(roomId)} socket={socket} />
+)}
+        </div>
+
+
+
+      <TopBar selectedTool={selectedTool} setSelectedTool={setSelectedTool} disabled={role==="viewer"}/>
       <canvas
         ref={canvasRef}
         className=" shadow-sm w-full h-screen"
@@ -63,9 +88,10 @@ const Canvas: React.FC<CanvasProps> = ({ roomId, socket }) => {
 interface TopBarProps {
   selectedTool: Tool;
   setSelectedTool: (tool: Tool) => void;
+  disabled:boolean;
 }
 
-function TopBar({ selectedTool, setSelectedTool }: TopBarProps) {
+function TopBar({ selectedTool, setSelectedTool,disabled }: TopBarProps) {
   return (
     <div
       className="fixed top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-md 
@@ -75,22 +101,22 @@ function TopBar({ selectedTool, setSelectedTool }: TopBarProps) {
       <IconButton
         icon={<Pencil />}
         activated={selectedTool === "pencil"}
-        onClick={() => setSelectedTool("pencil")}
+        onClick={() => !disabled && setSelectedTool("pencil")}
       />
       <IconButton
         icon={<Circle />}
         activated={selectedTool === "circle"}
-        onClick={() => setSelectedTool("circle")}
+        onClick={() => !disabled &&  setSelectedTool("circle")}
       />
       <IconButton
         icon={<Square />}
         activated={selectedTool === "rect"}
-        onClick={() => setSelectedTool("rect")}
+        onClick={() => !disabled && setSelectedTool("rect")}
       />
       <IconButton
         icon={<Eraser />}
         activated={selectedTool === "eraser"}
-        onClick={() => setSelectedTool("eraser")}
+        onClick={() => !disabled && setSelectedTool("eraser")}
       />
 
       {/* <div className="w-px h-6 bg-gray-300 mx-2" />

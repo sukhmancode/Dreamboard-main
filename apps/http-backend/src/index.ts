@@ -107,8 +107,60 @@ app.post("/room",middleware,async(req,res) => {
     }
 })
 
-app.get("/chats/:roomId",async(req,res) => {
+app.get("/room/:id/access",middleware,async(req,res) => {
+    const roomId = Number(req.params.id);
+    //@ts-ignore
+     const userId = req.userId;
+
+     if(isNaN(roomId)) {
+        return res.status(400).json({
+            message:"Invalid room id"
+        })
+     }
+
+     const room  = await prisma.room.findFirst({
+        where: {
+            id:roomId,
+            OR: [
+               { adminId:userId },
+               {
+                members: {
+                    some: {userId}
+                }
+               }
+            ]
+        }   
+     })
+     if(!room) {
+        return res.status(403).json({
+            message:"You do not have access to this channel"
+        })
+     }
+
+     res.json({
+        allowed:true
+     })
+})
+
+app.get("/chats/:roomId",middleware,async(req,res) => {
     const roomId = Number(req.params.roomId);
+      //@ts-ignore
+  const userId = req.userId;
+
+  
+  const room = await prisma.room.findFirst({
+    where: {
+      id: roomId,
+      OR: [
+        { adminId: userId },
+        { members: { some: { userId } } },
+      ],
+    },
+  });
+
+  if (!room) {
+    return res.status(403).json({ message: "Access denied" });
+  }
   const messages =  await prisma.chat.findMany({
         where: {
             roomId:roomId
@@ -133,6 +185,105 @@ app.get("/room/:slug",async(req,res) => {
         room
     })
 })
+app.post("/room/request-join",middleware,async(req,res) => {
+    const {roomId} = req.body;
+    //@ts-ignore
+    const userId = req.userId;
+    
+    const room = await prisma.room.findUnique({
+        where: {id:Number(roomId)}
+    })
+    if(!room) {
+        return res.status(404).json({ message: "Room not found" });
+    }
+
+    if(room.adminId === userId) {
+        return res.status(400).json({ message: "You own this room" });
+    }
+
+    const joinRequest = await prisma.roomJoinRequest.upsert({
+        where: {
+            roomId_userId: {
+                roomId:Number(roomId),
+                userId
+            }
+        },
+        update: {status:"pending"},
+        create: {
+            roomId:Number(roomId),
+            userId,
+            status:"pending"
+        },
+        include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+      
+    })
+
+    res.json({success:true})
+})
+
+app.get("/room/:id/requests",middleware,async(req,res) => {
+    const roomId = Number(req.params.id);
+    //@ts-ignore
+    const userId = req.userId
+
+    const room = await prisma.room.findFirst({
+        where: { id: roomId, adminId: userId },
+      })
+    
+    if (!room) {
+         return res.status(403).json({ message: "Not allowed" });
+    }
+    const requests = await prisma.roomJoinRequest.findMany({
+        where:{roomId,status:"pending"},
+        include: {
+            user: {select:{
+                id:true,
+                name:true,
+                email:true
+            }}
+        }
+    })
+    res.json({requests})
+})
+
+app.post("/room/handle-request",middleware,async(req,res) => {
+    const {requestId,action} = req.body;
+    //@ts-ignore
+    const userId = req.userId
+    
+    const request = await prisma.roomJoinRequest.findUnique({
+        where:{id:requestId},
+        include:{room:true}
+
+        
+    })
+    if (!request || request.room.adminId !== userId) {
+        return res.status(403).json({ message: "Not allowed" });
+      }
+
+    if(action === "accept") {
+        await prisma.roomMember.create({
+            data: {
+                roomId:request.roomId,
+                userId:request.userId,
+                role:"editor"
+            }
+        })
+        await prisma.roomJoinRequest.update({
+            where: { id: requestId },
+            data: { status: "accepted" },
+          });   
+    }
+    if (action === "reject") {
+        await prisma.roomJoinRequest.update({
+          where: { id: requestId },
+          data: { status: "rejected" },
+        });
+    }
+    res.json({success:true})
+})
 app.get("/allRooms",middleware,async(req,res) => {
     //@ts-ignore
     const userId = req.userId;
@@ -143,6 +294,82 @@ app.get("/allRooms",middleware,async(req,res) => {
     res.json({allrooms})
 })
 
+app.get("/room/:id/role",middleware,async(req,res) => {
+    const roomId = Number(req.params.id);
+    //@ts-ignore
+    const userId = req.userId;
+
+    const room = await prisma.room.findUnique({
+        where:{
+            id:roomId
+        }
+    })
+    if (!room) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+    
+      if (room.adminId === userId) {
+        return res.json({ role: "admin" });
+      }
+
+      const member = await prisma.roomMember.findUnique({
+        where:{
+            roomId_userId: {
+                roomId,
+                userId
+            }
+        }
+      })
+      if(member) {
+        return res.json({
+            role:member.role
+        })
+      }
+      return res.status(403).json({ message: "No access" });
+})
+
+app.get("/room/:id/members",middleware,async(req,res) => {
+    const roomId = Number(req.params.id);
+    //@ts-ignore
+    const userId = req.userId;
+
+    const room = await prisma.room.findFirst({
+        where: {
+            id:roomId,
+            OR: [
+                {adminId:userId},
+                {members:{some:userId}}
+            ]
+        }
+    })
+    if (!room) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const members = await prisma.roomMember.findMany({
+        where: { roomId },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      });
+    
+      res.json({ members });
+})
+
+app.get("/rooms/joined",middleware,async(req,res) => {
+    //@ts-ignore
+    const userId = req.userId;
+
+    const rooms = await prisma.roomMember.findMany({
+        where: {
+            userId
+        },include: {room:true}
+    });
+
+    res.json({
+        rooms:rooms.map(r => r.room)
+    })
+})
 app.get("/recent",middleware,async(req,res) => {
     //@ts-ignore
     const userId = req.userId;
